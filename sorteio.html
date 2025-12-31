@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DARCY | CHECKER 120</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #e0e7f1;
+            --surface: #ffffff;
+            --border: #000000;
+            --primary: #5c6bff;
+            --accent: #ff4794;
+            --success: #00e099;
+            --warning: #ffdc00;
+            --text: #000000;
+            --shadow: 6px 6px 0px 0px #000000;
+            --shadow-hover: 2px 2px 0px 0px #000000;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-weight: 900;
+            text-transform: uppercase;
+            font-style: italic;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            text-shadow: 3px 3px 0px var(--accent);
+        }
+
+        .subtitle {
+            background: var(--text);
+            color: var(--surface);
+            padding: 5px 10px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 30px;
+            width: 100%;
+            max-width: 1400px;
+            height: 85vh;
+        }
+
+        /* PAINÉIS */
+        .panel {
+            background: var(--surface);
+            border: 4px solid var(--border);
+            box-shadow: var(--shadow);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .panel-header {
+            background: var(--border);
+            color: var(--surface);
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--border);
+        }
+
+        .panel-body {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* INPUTS */
+        .inputs-wrapper {
+            background: #f4f4f4;
+            border: 3px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            background: var(--surface);
+            border: 3px solid var(--border);
+            padding: 15px 5px;
+            font-family: 'Space Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input[type="number"]:focus {
+            background: var(--warning);
+            box-shadow: 4px 4px 0px var(--border);
+            transform: translate(-2px, -2px);
+        }
+
+        .btn-action {
+            background: var(--primary);
+            color: white;
+            border: 3px solid var(--border);
+            padding: 10px 20px;
+            font-family: 'Space Mono', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px var(--border);
+            transition: 0.1s;
+        }
+
+        .btn-action:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--border);
+        }
+
+        .btn-action:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
+        }
+
+        /* LISTA DE RESULTADOS */
+        .hit-card {
+            background: var(--surface);
+            border: 3px solid var(--border);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            box-shadow: 4px 4px 0px #ccc;
+        }
+
+        .hit-card.win {
+            background: var(--success);
+            box-shadow: 4px 4px 0px var(--border);
+            animation: pulse 1s infinite alternate;
+        }
+
+        .hit-card.potential {
+            background: var(--warning);
+        }
+
+        /* PREVIEW */
+        .preview-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .preview-item {
+            border-bottom: 2px solid #eee;
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .preview-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* BOLAS */
+        .ball {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            line-height: 28px;
+            text-align: center;
+            border: 2px solid var(--border);
+            border-radius: 50%; /* Mantive redondo para legibilidade, mas com borda grossa */
+            margin: 2px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            background: #eee;
+        }
+
+        .ball.active {
+            background: var(--border);
+            color: var(--surface);
+            transform: scale(1.1);
+        }
+
+        .ball.match-win {
+            background: var(--surface);
+            color: var(--text);
+            border-color: var(--text);
+        }
+
+        .badge {
+            background: var(--border);
+            color: var(--surface);
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 2px solid var(--border);
+        }
+
+        .hit-card.win .badge {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg); border-left: 2px solid var(--border); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border: 2px solid var(--border); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        @media (max-width: 900px) {
+            .main-container { grid-template-columns: 1fr; height: auto; }
+            .panel { height: 500px; }
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Darcy Lotto <span style="color:var(--primary)">120</span></h1>
+<div class="subtitle">CONFERÊNCIA NEO-BRUTALISTA</div>
+
+<div class="main-container">
+    <div class="panel">
+        <div class="panel-header">
+            <span>Painel de Controle</span>
+            <button class="btn-action" onclick="simularSorteio()">🎲 Random</button>
+        </div>
+        <div class="panel-body">
+            <div class="inputs-wrapper">
+                <label style="font-weight:bold; text-transform: uppercase;">Digite as Dezenas:</label>
+                <div class="inputs-grid">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                </div>
+            </div>
+
+            <div style="border-top: 4px solid var(--border); padding-top: 20px;">
+                <h3 id="res-title" style="margin:0 0 15px 0;">AGUARDANDO INPUT...</h3>
+                <div id="resultsArea"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header" style="background: var(--accent);">
+            <span>Database</span>
+            <span id="counter" style="background:black; color:white; padding:2px 8px;">0 LOADED</span>
+        </div>
+        <div class="panel-body" style="padding:0;">
+            <div id="fullList" class="preview-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DATASET COM EXATAMENTE 120 JOGOS
+    const data = {
+        "Bilhete 01": {
+            A:[9,21,22,37,38,39], B:[15,16,22,33,39,50], C:[2,18,32,34,35,51], D:[13,16,36,41,49,57], E:[4,10,27,32,54,60], F:[5,9,33,40,51,57]
+        },
+        "Bilhete 02": {
+            A:[18,22,27,34,35,45], B:[1,7,14,18,21,34], C:[4,6,9,21,33,41]
+        },
+        "Bilhete 03": {
+            A:[9,11,30,34,36,50], B:[22,25,27,48,58,60], C:[18,19,26,32,48,52]
+        },
+        "Bilhete 04": {
+            A:[6,16,34,41,46,53], B:[6,13,14,19,35,60], C:[9,43,47,55,56,58], D:[37,39,44,46,49,50]
+        },
+        "Bilhete 05": {
+            A:[6,18,50,52,56,57], B:[1,19,26,31,50,53], C:[3,5,10,25,39,51], D:[15,22,23,40,47,53]
+        },
+        "Bilhete 06": {
+            A:[20,38,39,40,43,56], B:[11,12,13,24,32,55], C:[5,16,47,48,53,56], D:[15,16,37,39,43,55]
+        },
+        "Bilhete 07": {
+            A:[19,23,38,41,49,59], B:[8,40,41,44,47,57], C:[12,22,39,40,55,56], D:[2,14,15,27,31,55], E:[25,27,41,46,47,58], F:[4,23,28,36,53,55]
+        },
+        "Bilhete 08": {
+            A:[1,7,26,34,38,39], B:[4,14,24,26,49,50], C:[2,8,37,46,56,57], D:[1,7,27,34,39,53], E:[8,15,21,47,54,59], F:[5,6,21,36,41,46]
+        },
+        "Bilhete 09": {
+            A:[9,12,35,39,55,56], B:[1,15,20,26,27,38], C:[3,31,46,47,52,55], D:[31,32,40,41,42,55], E:[5,39,43,46,47,50], F:[12,14,26,37,48,58]
+        },
+        "Bilhete 10": {
+            A:[10,12,20,25,28,30], B:[11,13,22,29,35,56], C:[8,9,14,40,55,56]
+        },
+        "Bilhete 11": {
+            A:[13,28,39,45,51,56], B:[6,18,26,43,57,60], C:[2,5,11,17,25,38]
+        },
+        "Bilhete 12": {
+            A:[3,5,10,33,45,55], B:[2,10,15,33,34,35], C:[5,12,25,30,55,58], D:[8,30,40,42,51,54], E:[5,9,31,44,50,56], F:[17,40,48,50,53,59], G:[10,14,18,27,30,60], H:[4,16,20,27,36,47]
+        },
+        "Bilhete 13": {
+            A:[7,9,19,29,36,51], B:[8,11,14,21,22,39], C:[3,14,16,37,48,59], D:[2,7,13,19,34,58], E:[39,40,53,55,56,60], F:[10,31,38,56,57,59], G:[22,27,51,53,58,60], H:[2,9,17,50,54,60]
+        },
+        "Bilhete 14": {
+            A:[17,25,27,32,56,58], B:[13,16,22,25,45,47], C:[27,31,35,38,52,53], D:[1,20,24,27,30,49], E:[8,12,23,26,31,59], F:[3,15,41,44,52,57], G:[10,14,22,30,33,35], H:[10,15,40,41,48,58]
+        },
+        "Bilhete 15": {
+            A:[1,7,18,21,33,41], B:[2,3,14,19,27,31], C:[13,18,22,24,31,42], D:[8,18,29,40,44,56], E:[4,10,13,14,44,50], F:[1,7,12,48,49,56], G:[17,18,40,50,54,58], H:[5,16,17,35,58,60]
+        },
+        "Bilhete Sup. Dir.": {
+            A:[13,18,24,33,57,58], B:[12,36,41,42,43,49], C:[5,16,19,43,56,57], D:[26,34,41,46,48,52], E:[5,15,28,41,47,59], F:[12,13,29,35,43,47], G:[1,3,7,32,49,55], H:[10,21,29,38,43,44], I:[8,19,30,45,49,59], J:[1,7,40,53,54,59]
+        },
+        "Bilhete 17": {
+            A:[12,25,48,52,55,60], B:[5,15,33,38,54,55], C:[2,7,15,18,23,33], D:[7,8,17,47,48,60], E:[1,8,34,50,57,60], F:[1,10,22,38,44,56], G:[23,24,26,44,48,55], H:[7,20,25,43,46,56], I:[12,15,26,32,50,60], J:[3,5,15,47,54,56]
+        },
+        "Bilhete 18": {
+            A:[2,20,21,29,50,55], B:[6,7,26,30,44,47], C:[10,11,12,29,36,58], D:[26,30,39,44,56,57], E:[9,19,23,26,32,39], F:[7,14,20,51,55,57], G:[11,15,25,27,28,39], H:[1,5,24,27,29,39], I:[1,22,36,37,42,56], J:[14,29,43,49,50,56]
+        },
+        "Bilhete 19": {
+            A:[16,29,34,41,56,57], B:[9,14,25,32,34,52], C:[32,35,37,42,45,46], D:[2,6,27,38,46,51], E:[2,16,19,26,29,33], F:[1,8,28,34,46,58], G:[24,33,47,48,57,59], H:[1,23,24,27,35,60], I:[7,19,34,43,52,53], J:[11,15,21,24,32,57]
+        }
+    };
+
+    const inputs = document.querySelectorAll('.num-in');
+    const resultsArea = document.getElementById('resultsArea');
+    const fullList = document.getElementById('fullList');
+    const resTitle = document.getElementById('res-title');
+
+    function init() {
+        let total = 0;
+        for (const b in data) {
+            for (const j in data[b]) {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.id = `view-${b.replace(/\s/g,'')}-${j}`;
+                div.innerHTML = `
+                    <span style="font-weight:bold; color:var(--primary)">${b} <span style="color:var(--text)">[${j}]</span></span>
+                    <div>${data[b][j].map(n => `<span class="ball" data-n="${n}">${n}</span>`).join('')}</div>
+                `;
+                fullList.appendChild(div);
+                total++;
+            }
+        }
+        document.getElementById('counter').innerText = `${total} JOGOS`;
+    }
+
+    function check() {
+        const sorteados = Array.from(inputs).map(i => parseInt(i.value)).filter(n => !isNaN(n));
+        resultsArea.innerHTML = "";
+
+        // Resetar visual das bolas no database
+        document.querySelectorAll('.ball').forEach(b => {
+            b.className = 'ball';
+        });
+
+        // Marcar bolas sorteadas no database (scroll direito)
+        sorteados.forEach(num => {
+            document.querySelectorAll(`.ball[data-n="${num}"]`).forEach(b => b.classList.add('active'));
+        });
+
+        let found = 0;
+        let htmlBuffer = "";
+
+        for (const b in data) {
+            for (const j in data[b]) {
+                const numeros = data[b][j];
+                const acertos = numeros.filter(n => sorteados.includes(n));
+                const qtd = acertos.length;
+
+                // MOSTRAR SE:
+                // 1. O número de acertos for igual a quantidade de números digitados (ex: digitou 3, acertou 3)
+                // 2. OU se já tiver prêmio (4, 5, 6)
+                if ((sorteados.length > 0 && qtd === sorteados.length) || qtd >= 4) {
+                    found++;
+                    htmlBuffer += getHitHTML(b, j, numeros, acertos);
+                }
+            }
+        }
+
+        if(found > 0) {
+            resultsArea.innerHTML = htmlBuffer;
+            resTitle.innerText = `${found} RESULTADOS ENCONTRADOS`;
+            resTitle.style.color = sorteados.length >= 4 ? "var(--success)" : "var(--text)";
+        } else {
+            resTitle.innerText = sorteados.length > 0 ? "NENHUM JOGO COM 100% (OU PRÊMIO)" : "AGUARDANDO INPUT...";
+            resTitle.style.color = "var(--text)";
+        }
+    }
+
+    function getHitHTML(bilhete, jogo, numeros, acertos) {
+        const isWin = acertos.length >= 4;
+        const label = acertos.length === 6 ? 'SENA 💰' : acertos.length === 5 ? 'QUINA 💵' : acertos.length === 4 ? 'QUADRA 🧧' : 'EM JOGO 🎯';
+
+        return `
+        <div class="hit-card ${isWin ? 'win' : 'potential'}">
+            <div>
+                <div style="margin-bottom:8px; font-weight:bold;">${bilhete} - Jogo ${jogo}</div>
+                ${numeros.map(n => {
+            const hit = acertos.includes(n);
+            return `<span class="ball ${hit ? (isWin ? 'match-win' : 'active') : ''}" style="${hit ? 'border-color:black' : ''}">${n}</span>`
+        }).join('')}
+            </div>
+            <div style="text-align:right">
+                <span class="badge">${label}</span><br>
+                <strong style="font-size:1.5rem">${acertos.length}</strong>
+            </div>
+        </div>`;
+    }
+
+    function simularSorteio() {
+        const nums = [];
+        while(nums.length < 6) {
+            const r = Math.floor(Math.random() * 60) + 1;
+            if(!nums.includes(r)) nums.push(r);
+        }
+        nums.sort((a,b) => a-b).forEach((n, i) => {
+            inputs[i].value = n;
+        });
+        check();
+    }
+
+    inputs.forEach(i => i.addEventListener('input', check));
+    init();
+
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DARCY | CHECKER 120</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #e0e7f1;
+            --surface: #ffffff;
+            --border: #000000;
+            --primary: #5c6bff;
+            --accent: #ff4794;
+            --success: #00e099;
+            --warning: #ffdc00;
+            --text: #000000;
+            --shadow: 6px 6px 0px 0px #000000;
+            --shadow-hover: 2px 2px 0px 0px #000000;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-weight: 900;
+            text-transform: uppercase;
+            font-style: italic;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            text-shadow: 3px 3px 0px var(--accent);
+        }
+
+        .subtitle {
+            background: var(--text);
+            color: var(--surface);
+            padding: 5px 10px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 30px;
+            width: 100%;
+            max-width: 1400px;
+            height: 85vh;
+        }
+
+        /* PAINÉIS */
+        .panel {
+            background: var(--surface);
+            border: 4px solid var(--border);
+            box-shadow: var(--shadow);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .panel-header {
+            background: var(--border);
+            color: var(--surface);
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--border);
+        }
+
+        .panel-body {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* INPUTS */
+        .inputs-wrapper {
+            background: #f4f4f4;
+            border: 3px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            background: var(--surface);
+            border: 3px solid var(--border);
+            padding: 15px 5px;
+            font-family: 'Space Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input[type="number"]:focus {
+            background: var(--warning);
+            box-shadow: 4px 4px 0px var(--border);
+            transform: translate(-2px, -2px);
+        }
+
+        .btn-action {
+            background: var(--primary);
+            color: white;
+            border: 3px solid var(--border);
+            padding: 10px 20px;
+            font-family: 'Space Mono', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px var(--border);
+            transition: 0.1s;
+        }
+
+        .btn-action:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--border);
+        }
+
+        .btn-action:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
+        }
+
+        /* LISTA DE RESULTADOS */
+        .hit-card {
+            background: var(--surface);
+            border: 3px solid var(--border);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            box-shadow: 4px 4px 0px #ccc;
+        }
+
+        .hit-card.win {
+            background: var(--success);
+            box-shadow: 4px 4px 0px var(--border);
+            animation: pulse 1s infinite alternate;
+        }
+
+        .hit-card.potential {
+            background: var(--warning);
+        }
+
+        /* PREVIEW */
+        .preview-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .preview-item {
+            border-bottom: 2px solid #eee;
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .preview-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* BOLAS */
+        .ball {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            line-height: 28px;
+            text-align: center;
+            border: 2px solid var(--border);
+            border-radius: 50%; /* Mantive redondo para legibilidade, mas com borda grossa */
+            margin: 2px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            background: #eee;
+        }
+
+        .ball.active {
+            background: var(--border);
+            color: var(--surface);
+            transform: scale(1.1);
+        }
+
+        .ball.match-win {
+            background: var(--surface);
+            color: var(--text);
+            border-color: var(--text);
+        }
+
+        .badge {
+            background: var(--border);
+            color: var(--surface);
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 2px solid var(--border);
+        }
+
+        .hit-card.win .badge {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg); border-left: 2px solid var(--border); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border: 2px solid var(--border); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        @media (max-width: 900px) {
+            .main-container { grid-template-columns: 1fr; height: auto; }
+            .panel { height: 500px; }
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Darcy Lotto <span style="color:var(--primary)">120</span></h1>
+<div class="subtitle">CONFERÊNCIA NEO-BRUTALISTA</div>
+
+<div class="main-container">
+    <div class="panel">
+        <div class="panel-header">
+            <span>Painel de Controle</span>
+            <button class="btn-action" onclick="simularSorteio()">🎲 Random</button>
+        </div>
+        <div class="panel-body">
+            <div class="inputs-wrapper">
+                <label style="font-weight:bold; text-transform: uppercase;">Digite as Dezenas:</label>
+                <div class="inputs-grid">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                    <input type="number" min="1" max="60" class="num-in" placeholder="00">
+                </div>
+            </div>
+
+            <div style="border-top: 4px solid var(--border); padding-top: 20px;">
+                <h3 id="res-title" style="margin:0 0 15px 0;">AGUARDANDO INPUT...</h3>
+                <div id="resultsArea"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header" style="background: var(--accent);">
+            <span>Database</span>
+            <span id="counter" style="background:black; color:white; padding:2px 8px;">0 LOADED</span>
+        </div>
+        <div class="panel-body" style="padding:0;">
+            <div id="fullList" class="preview-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DATASET COM EXATAMENTE 120 JOGOS
+    const data = {
+        "Bilhete 01": {
+            A:[9,21,22,37,38,39], B:[15,16,22,33,39,50], C:[2,18,32,34,35,51], D:[13,16,36,41,49,57], E:[4,10,27,32,54,60], F:[5,9,33,40,51,57]
+        },
+        "Bilhete 02": {
+            A:[18,22,27,34,35,45], B:[1,7,14,18,21,34], C:[4,6,9,21,33,41]
+        },
+        "Bilhete 03": {
+            A:[9,11,30,34,36,50], B:[22,25,27,48,58,60], C:[18,19,26,32,48,52]
+        },
+        "Bilhete 04": {
+            A:[6,16,34,41,46,53], B:[6,13,14,19,35,60], C:[9,43,47,55,56,58], D:[37,39,44,46,49,50]
+        },
+        "Bilhete 05": {
+            A:[6,18,50,52,56,57], B:[1,19,26,31,50,53], C:[3,5,10,25,39,51], D:[15,22,23,40,47,53]
+        },
+        "Bilhete 06": {
+            A:[20,38,39,40,43,56], B:[11,12,13,24,32,55], C:[5,16,47,48,53,56], D:[15,16,37,39,43,55]
+        },
+        "Bilhete 07": {
+            A:[19,23,38,41,49,59], B:[8,40,41,44,47,57], C:[12,22,39,40,55,56], D:[2,14,15,27,31,55], E:[25,27,41,46,47,58], F:[4,23,28,36,53,55]
+        },
+        "Bilhete 08": {
+            A:[1,7,26,34,38,39], B:[4,14,24,26,49,50], C:[2,8,37,46,56,57], D:[1,7,27,34,39,53], E:[8,15,21,47,54,59], F:[5,6,21,36,41,46]
+        },
+        "Bilhete 09": {
+            A:[9,12,35,39,55,56], B:[1,15,20,26,27,38], C:[3,31,46,47,52,55], D:[31,32,40,41,42,55], E:[5,39,43,46,47,50], F:[12,14,26,37,48,58]
+        },
+        "Bilhete 10": {
+            A:[10,12,20,25,28,30], B:[11,13,22,29,35,56], C:[8,9,14,40,55,56]
+        },
+        "Bilhete 11": {
+            A:[13,28,39,45,51,56], B:[6,18,26,43,57,60], C:[2,5,11,17,25,38]
+        },
+        "Bilhete 12": {
+            A:[3,5,10,33,45,55], B:[2,10,15,33,34,35], C:[5,12,25,30,55,58], D:[8,30,40,42,51,54], E:[5,9,31,44,50,56], F:[17,40,48,50,53,59], G:[10,14,18,27,30,60], H:[4,16,20,27,36,47]
+        },
+        "Bilhete 13": {
+            A:[7,9,19,29,36,51], B:[8,11,14,21,22,39], C:[3,14,16,37,48,59], D:[2,7,13,19,34,58], E:[39,40,53,55,56,60], F:[10,31,38,56,57,59], G:[22,27,51,53,58,60], H:[2,9,17,50,54,60]
+        },
+        "Bilhete 14": {
+            A:[17,25,27,32,56,58], B:[13,16,22,25,45,47], C:[27,31,35,38,52,53], D:[1,20,24,27,30,49], E:[8,12,23,26,31,59], F:[3,15,41,44,52,57], G:[10,14,22,30,33,35], H:[10,15,40,41,48,58]
+        },
+        "Bilhete 15": {
+            A:[1,7,18,21,33,41], B:[2,3,14,19,27,31], C:[13,18,22,24,31,42], D:[8,18,29,40,44,56], E:[4,10,13,14,44,50], F:[1,7,12,48,49,56], G:[17,18,40,50,54,58], H:[5,16,17,35,58,60]
+        },
+        "Bilhete Sup. Dir.": {
+            A:[13,18,24,33,57,58], B:[12,36,41,42,43,49], C:[5,16,19,43,56,57], D:[26,34,41,46,48,52], E:[5,15,28,41,47,59], F:[12,13,29,35,43,47], G:[1,3,7,32,49,55], H:[10,21,29,38,43,44], I:[8,19,30,45,49,59], J:[1,7,40,53,54,59]
+        },
+        "Bilhete 17": {
+            A:[12,25,48,52,55,60], B:[5,15,33,38,54,55], C:[2,7,15,18,23,33], D:[7,8,17,47,48,60], E:[1,8,34,50,57,60], F:[1,10,22,38,44,56], G:[23,24,26,44,48,55], H:[7,20,25,43,46,56], I:[12,15,26,32,50,60], J:[3,5,15,47,54,56]
+        },
+        "Bilhete 18": {
+            A:[2,20,21,29,50,55], B:[6,7,26,30,44,47], C:[10,11,12,29,36,58], D:[26,30,39,44,56,57], E:[9,19,23,26,32,39], F:[7,14,20,51,55,57], G:[11,15,25,27,28,39], H:[1,5,24,27,29,39], I:[1,22,36,37,42,56], J:[14,29,43,49,50,56]
+        },
+        "Bilhete 19": {
+            A:[16,29,34,41,56,57], B:[9,14,25,32,34,52], C:[32,35,37,42,45,46], D:[2,6,27,38,46,51], E:[2,16,19,26,29,33], F:[1,8,28,34,46,58], G:[24,33,47,48,57,59], H:[1,23,24,27,35,60], I:[7,19,34,43,52,53], J:[11,15,21,24,32,57]
+        }
+    };
+
+    const inputs = document.querySelectorAll('.num-in');
+    const resultsArea = document.getElementById('resultsArea');
+    const fullList = document.getElementById('fullList');
+    const resTitle = document.getElementById('res-title');
+
+    function init() {
+        let total = 0;
+        for (const b in data) {
+            for (const j in data[b]) {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.id = `view-${b.replace(/\s/g,'')}-${j}`;
+                div.innerHTML = `
+                    <span style="font-weight:bold; color:var(--primary)">${b} <span style="color:var(--text)">[${j}]</span></span>
+                    <div>${data[b][j].map(n => `<span class="ball" data-n="${n}">${n}</span>`).join('')}</div>
+                `;
+                fullList.appendChild(div);
+                total++;
+            }
+        }
+        document.getElementById('counter').innerText = `${total} JOGOS`;
+    }
+
+    function check() {
+        const sorteados = Array.from(inputs).map(i => parseInt(i.value)).filter(n => !isNaN(n));
+        resultsArea.innerHTML = "";
+
+        // Resetar visual das bolas no database
+        document.querySelectorAll('.ball').forEach(b => {
+            b.className = 'ball';
+        });
+
+        // Marcar bolas sorteadas no database (scroll direito)
+        sorteados.forEach(num => {
+            document.querySelectorAll(`.ball[data-n="${num}"]`).forEach(b => b.classList.add('active'));
+        });
+
+        let found = 0;
+        let htmlBuffer = "";
+
+        for (const b in data) {
+            for (const j in data[b]) {
+                const numeros = data[b][j];
+                const acertos = numeros.filter(n => sorteados.includes(n));
+                const qtd = acertos.length;
+
+                // MOSTRAR SE:
+                // 1. O número de acertos for igual a quantidade de números digitados (ex: digitou 3, acertou 3)
+                // 2. OU se já tiver prêmio (4, 5, 6)
+                if ((sorteados.length > 0 && qtd === sorteados.length) || qtd >= 4) {
+                    found++;
+                    htmlBuffer += getHitHTML(b, j, numeros, acertos);
+                }
+            }
+        }
+
+        if(found > 0) {
+            resultsArea.innerHTML = htmlBuffer;
+            resTitle.innerText = `${found} RESULTADOS ENCONTRADOS`;
+            resTitle.style.color = sorteados.length >= 4 ? "var(--success)" : "var(--text)";
+        } else {
+            resTitle.innerText = sorteados.length > 0 ? "NENHUM JOGO COM 100% (OU PRÊMIO)" : "AGUARDANDO INPUT...";
+            resTitle.style.color = "var(--text)";
+        }
+    }
+
+    function getHitHTML(bilhete, jogo, numeros, acertos) {
+        const isWin = acertos.length >= 4;
+        const label = acertos.length === 6 ? 'SENA 💰' : acertos.length === 5 ? 'QUINA 💵' : acertos.length === 4 ? 'QUADRA 🧧' : 'EM JOGO 🎯';
+
+        return `
+        <div class="hit-card ${isWin ? 'win' : 'potential'}">
+            <div>
+                <div style="margin-bottom:8px; font-weight:bold;">${bilhete} - Jogo ${jogo}</div>
+                ${numeros.map(n => {
+            const hit = acertos.includes(n);
+            return `<span class="ball ${hit ? (isWin ? 'match-win' : 'active') : ''}" style="${hit ? 'border-color:black' : ''}">${n}</span>`
+        }).join('')}
+            </div>
+            <div style="text-align:right">
+                <span class="badge">${label}</span><br>
+                <strong style="font-size:1.5rem">${acertos.length}</strong>
+            </div>
+        </div>`;
+    }
+
+    function simularSorteio() {
+        const nums = [];
+        while(nums.length < 6) {
+            const r = Math.floor(Math.random() * 60) + 1;
+            if(!nums.includes(r)) nums.push(r);
+        }
+        nums.sort((a,b) => a-b).forEach((n, i) => {
+            inputs[i].value = n;
+        });
+        check();
+    }
+
+    inputs.forEach(i => i.addEventListener('input', check));
+    init();
+
+</script>
+</body>
+</html>
